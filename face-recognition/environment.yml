@@ -1,0 +1,19 @@
+name: face-recognition
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - matplotlib
+  - numpy
+  - pandas
+  - python=3.8.16
+  - ipykernel
+  - scikit-learn
+  - seaborn
+  - pip
+  - scipy
+  - notebook
+  - pip:
+    - jupyter-contrib-nbextensions
+    - ipywidgets
+    - opencv-python
