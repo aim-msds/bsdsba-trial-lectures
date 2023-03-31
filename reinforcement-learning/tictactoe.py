@@ -14,6 +14,7 @@ from time import sleep
 
 import pickle
 import numpy as np
+from tqdm import tqdm
 
 from IPython.display import clear_output
 
@@ -304,13 +305,16 @@ def train(epochs=20000):
     judger = Judger(player1, player2)
     player1Win = 0.0
     player2Win = 0.0
+
+    pb = tqdm(total=epochs)
     for i in range(0, epochs):
-        print("Epoch", i)
+        pb.set_description(f"Training number {i + 1} of {epochs}")
         winner = judger.play()
         if winner == 1:
             player1Win += 1
         if winner == -1:
             player2Win += 1
+        pb.update(1)
         judger.reset()
     print(player1Win / epochs)
     print(player2Win / epochs)
