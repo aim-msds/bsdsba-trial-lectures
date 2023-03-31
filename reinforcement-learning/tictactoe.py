@@ -329,16 +329,18 @@ def compete(turns=500):
     player2.loadPolicy()
     player1Win = 0.0
     player2Win = 0.0
+    pb = tqdm(total=turns)
     for i in range(0, turns):
-        print("Epoch", i)
+        pb.set_description(f"Competition number {i + 1} of {turns}")
         winner = judger.play()
         if winner == 1:
             player1Win += 1
         if winner == -1:
             player2Win += 1
         judger.reset()
-    print(player1Win / turns)
-    print(player2Win / turns)
+        pb.update(1)
+    print("Player 1 winrate: ", player1Win / turns)
+    print("Player 2 winrate: ", player2Win / turns)
 
 def play():
     continue_play = True
