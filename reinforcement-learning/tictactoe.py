@@ -10,6 +10,7 @@
 # Edited by Leodegario Lorenzo II, 2023
 # reference: https://github.com/JaeDukSeo/reinforcement-learning-an-introduction/blob/master/chapter01/TicTacToe.py
 
+import os
 from time import sleep
 
 import pickle
@@ -259,15 +260,29 @@ class Player:
         action.append(self.symbol)
         return action
 
-    def savePolicy(self):
-        fw = open('optimal_policy_' + str(self.symbol), 'wb')
-        pickle.dump(self.estimations, fw)
-        fw.close()
+    def savePolicy(self, policy_filepath):
+        """Save current policy to the given filepath
 
-    def loadPolicy(self):
-        fr = open('optimal_policy_' + str(self.symbol),'rb')
-        self.estimations = pickle.load(fr)
-        fr.close()
+        Parameters
+        ----------
+        policy_filepath : str or Path
+            Filepath where to save the current policy
+        """
+        os.makedirs(os.path.dirname(policy_filepath), exist_ok=True)
+        with open(policy_filepath, 'wb') as f:
+            pickle.dump(self.estimations, f)
+        print(f"Policy saved on {policy_filepath}")
+
+    def loadPolicy(self, policy_filepath):
+        """Load the policy given its filepath
+
+        Parameters
+        ----------
+        policy_filepath : str or Path
+            Policy filepath location
+        """
+        with open(policy_filepath, 'rb') as f:
+            self.estimations = pickle.load(f)
 
 # human interface
 # input a number to put a chessman
@@ -299,7 +314,18 @@ class HumanPlayer:
             return self.takeAction()
         return (i, j, self.symbol)
 
-def train(epochs=20000):
+def train(policy_filepath_1, policy_filepath_2, epochs=20_000):
+    """Perform training for the two computer players
+
+    Parameters
+    ----------
+    policy_filepath_1 : str or Path
+        Policy filepath for player 1 (starting player)
+    policy_filepath_2 : str or Path
+        Policy filepath for player 2 (second player)
+    epochs : int, default=20_000
+        Number of simulations and games to be played by AI,
+    """
     player1 = Player()
     player2 = Player()
     judger = Judger(player1, player2)
@@ -316,22 +342,33 @@ def train(epochs=20000):
             player2Win += 1
         pb.update(1)
         judger.reset()
-    print(player1Win / epochs)
-    print(player2Win / epochs)
-    player1.savePolicy()
-    player2.savePolicy()
+    print("Player 1 winrate: ", player1Win / epochs)
+    print("Player 2 winrate: ", player2Win / epochs)
+    player1.savePolicy(policy_filepath_1)
+    player2.savePolicy(policy_filepath_2)
 
-def compete(turns=500):
+def compete(policy_filepath_1, policy_filepath_2, num_games=500):
+    """Compete two AI players given their respective policies
+
+    Parameters
+    ----------
+    policy_filepath_1 : str or Path
+        Policy filepath for player 1
+    policy_filepath_2 : str or Path
+        Policy filepath for player 2
+    num_games : int, default=500
+        Number of games to undergo for competition
+    """
     player1 = Player(exploreRate=0)
     player2 = Player(exploreRate=0)
     judger = Judger(player1, player2, False)
-    player1.loadPolicy()
-    player2.loadPolicy()
+    player1.loadPolicy(policy_filepath_1)
+    player2.loadPolicy(policy_filepath_2)
     player1Win = 0.0
     player2Win = 0.0
-    pb = tqdm(total=turns)
-    for i in range(0, turns):
-        pb.set_description(f"Competition number {i + 1} of {turns}")
+    pb = tqdm(total=num_games)
+    for i in range(0, num_games):
+        pb.set_description(f"Competition number {i + 1} of {num_games}")
         winner = judger.play()
         if winner == 1:
             player1Win += 1
@@ -339,16 +376,31 @@ def compete(turns=500):
             player2Win += 1
         judger.reset()
         pb.update(1)
-    print("Player 1 winrate: ", player1Win / turns)
-    print("Player 2 winrate: ", player2Win / turns)
+    print("Player 1 winrate: ", player1Win / num_games)
+    print("Player 2 winrate: ", player2Win / num_games)
 
-def play():
+def play(policy_filepath, first=False):
+    """Play with a trained AI with the given policy path
+
+    Parameters
+    ----------
+    policy_filepath : str or Path
+        Policy filepath to use for the player
+    first : bool, default=False
+        If True, human player is set as the starting
+    """
     continue_play = True
     while continue_play:
         player1 = Player(exploreRate=0)
         player2 = HumanPlayer()
-        judger = Judger(player1, player2, False)
-        player1.loadPolicy()
+
+        # Determine who playing as player 1
+        if not first:
+            judger = Judger(player1, player2, False)
+        else:
+            judger = Judger(player2, player1, False)
+
+        player1.loadPolicy(policy_filepath)
         winner = judger.play(True, sleep_time=0.2)
         judger.currentState.show()
         if winner == player2.symbol:
